@@ -1,4 +1,4 @@
-name: CICD
+name: CI/CD
 
 on:
   push:
@@ -7,25 +7,34 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: 20
+          node-version: '14'
+
       - name: Install Dependencies
         run: npm install
-      - name: Genrate Deployment Package
-        run: zip -r nodejs-app.zip .
-      - name: Deploy to EB
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Package Deployment
+        run: |
+          cd build
+          zip -r ../nodejs-app.zip .
+
+      - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: 'node-js-app'
-          environment_name: 'Node-js-app-env'
+          application_name: 'node-js-app' # Replace with your Elastic Beanstalk application name
+          environment_name: 'Node-js-app-env' # Replace with your Elastic Beanstalk environment name
           version_label: ${{ github.sha }}
-          region: us-east-1
-          deployment_package: nodejs-app.zip
+          region: 'us-east-1'
+          deployment_package: 'nodejs-app.zip'
